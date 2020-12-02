@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AdventOfCode2020.Utilities;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,26 +13,22 @@ namespace AdventOfCode2020
     {
         private static readonly IEnumerable<int> Sample = new[] { 1721, 979, 366, 299, 675, 1456 };
 
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly ITestOutputHelper _output;
 
-        public Day1Part2(ITestOutputHelper testOutputHelper)
+        public Day1Part2(ITestOutputHelper output)
         {
-            _testOutputHelper = testOutputHelper;
+            _output = output;
         }
 
         [Fact]
         public void Main()
         {
-            _testOutputHelper.WriteLine("[*] Calculating for sample data");
+            var data = LoadData("day1part2");
 
-            var result = Calculate(Sample);
-            result.Should().Be(241861950);
+            _output.Run("sample", () => Calculate(Sample))
+                .Should().Be(241861950);
 
-            _testOutputHelper.WriteLine($"[*] Result = {result}");
-
-            var data = LoadData("day1part1");
-            _testOutputHelper.WriteLine("[*] Calculating for actual data");
-            _testOutputHelper.WriteLine($"[*] Result = {Calculate(data)}");
+            _output.Run("actual", () => Calculate(data));
         }
 
         private static int Calculate(IEnumerable<int> data)

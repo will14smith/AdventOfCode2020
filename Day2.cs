@@ -28,11 +28,11 @@ namespace AdventOfCode2020
             from pwd in Character.AnyChar.Many()
             select new Input(range.Min, range.Max, target, new string(pwd));
 
-        private readonly ITestOutputHelper _testOutputHelper;
+        private readonly ITestOutputHelper _output;
 
-        public Day2(ITestOutputHelper testOutputHelper)
+        public Day2(ITestOutputHelper output)
         {
-            _testOutputHelper = testOutputHelper;
+            _output = output;
         }
 
         [Fact]
@@ -40,15 +40,10 @@ namespace AdventOfCode2020
         {
             var data = LoadData("day2");
 
-            _testOutputHelper.WriteLine("[*] Calculating for sample data");
+            _output.Run("sample", () => CountValidPasswords(Sample, IsValidPart1))
+                .Should().Be(2);
 
-            var result = CountValidPasswords(Sample, IsValidPart1);
-            result.Should().Be(2);
-
-            _testOutputHelper.WriteLine($"[*] Result = {result}");
-
-            _testOutputHelper.WriteLine("[*] Calculating for actual data");
-            _testOutputHelper.WriteLine($"[*] Result = {CountValidPasswords(data, IsValidPart1)}");
+            _output.Run("actual", () => CountValidPasswords(data, IsValidPart1));
 
             static bool IsValidPart1(Input input)
             {
@@ -62,15 +57,10 @@ namespace AdventOfCode2020
         {
             var data = LoadData("day2");
 
-            _testOutputHelper.WriteLine("[*] Calculating for sample data");
+            _output.Run("sample", () => CountValidPasswords(Sample, IsValidPart2))
+                .Should().Be(1);
 
-            var result = CountValidPasswords(Sample, IsValidPart2);
-            result.Should().Be(1);
-
-            _testOutputHelper.WriteLine($"[*] Result = {result}");
-
-            _testOutputHelper.WriteLine("[*] Calculating for actual data");
-            _testOutputHelper.WriteLine($"[*] Result = {CountValidPasswords(data, IsValidPart2)}");
+            _output.Run("actual", () => CountValidPasswords(data, IsValidPart2));
 
             static bool IsValidPart2(Input input)
             {
