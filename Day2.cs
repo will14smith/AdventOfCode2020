@@ -57,6 +57,30 @@ namespace AdventOfCode2020
             }
         }
 
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day2");
+
+            _testOutputHelper.WriteLine("[*] Calculating for sample data");
+
+            var result = CountValidPasswords(Sample, IsValidPart2);
+            result.Should().Be(1);
+
+            _testOutputHelper.WriteLine($"[*] Result = {result}");
+
+            _testOutputHelper.WriteLine("[*] Calculating for actual data");
+            _testOutputHelper.WriteLine($"[*] Result = {CountValidPasswords(data, IsValidPart2)}");
+
+            static bool IsValidPart2(Input input)
+            {
+                var a = input.Pwd[input.Min - 1];
+                var b = input.Pwd[input.Max - 1];
+
+                return (a == input.Target) ^ (b == input.Target);
+            }
+        }
+
         private static int CountValidPasswords(IEnumerable<string> data, Func<Input, bool> isValid)
         {
             return data.Select(x => InputParser.MustParse(x)).Count(isValid);
