@@ -48,18 +48,46 @@ namespace AdventOfCode2020
             _output.Run("actual", () => CountTreesHit(data));
         }
 
-        private static int CountTreesHit(IEnumerable<string> lineStrings)
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day3");
+            var slopes = new[] {(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)};
+
+            _output.Run("sample", () => CountTreesHitAllSlopes(Sample, slopes))
+                .Should().Be(336);
+
+            _output.Run("actual", () => CountTreesHitAllSlopes(data, slopes));
+        }
+
+        private static int CountTreesHitAllSlopes(IEnumerable<string> lineStrings, IEnumerable<(int X, int Y)> slopes)
         {
             var lines = lineStrings.Select(x => LineParser.MustParse(x)).ToList();
 
+            var treesHit = slopes.Select(slope => CountTreesHit(lines, slope.X, slope.Y)).ToList();
+            return treesHit.Aggregate(1, (a, x) => a * x);
+        }
+
+        private static int CountTreesHit(IEnumerable<string> lineStrings, int dx = 3, int dy = 1)
+        {
+            var lines = lineStrings.Select(x => LineParser.MustParse(x)).ToList();
+            return CountTreesHit(lines, dx, dy);
+        }
+
+        private static int CountTreesHit(IReadOnlyList<Line> lines, int dx = 3, int dy = 1)
+        {
             var treesHit = 0;
-            for (var y = 0; y < lines.Count; y++)
+
+            var x = 0;
+
+            for (var y = 0; y < lines.Count; y += dy)
             {
-                var x = y * 3;
                 if (lines[y].HasTreeAtX(x))
                 {
                     treesHit++;
                 }
+
+                x += dx;
             }
 
             return treesHit;
