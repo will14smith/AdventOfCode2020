@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
@@ -53,13 +54,30 @@ iyr:2011 ecl:brn hgt:59in";
         {
             var data = LoadData("day4");
 
-            _output.Run("sample", () => CountValidPassports(Sample))
+            _output.Run("sample", () => CountValidPassports1(Sample))
                 .Should().Be(2);
 
-            _output.Run("actual", () => CountValidPassports(data));
+            _output.Run("actual", () => CountValidPassports1(data));
         }
 
-        private static int CountValidPassports(string input)
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day4");
+
+            _output.Run("sample", () => CountValidPassports2(Sample))
+                .Should().Be(2);
+
+            _output.Run("actual", () => CountValidPassports2(data));
+        }
+
+        private static int CountValidPassports1(string input)
+        {
+            var passports = PassportsParser.MustParse(input);
+            return passports.Count(x => x.HasRequiredFields());
+        }
+
+        private static int CountValidPassports2(string input)
         {
             var passports = PassportsParser.MustParse(input);
             return passports.Count(x => x.IsValid());
@@ -67,15 +85,16 @@ iyr:2011 ecl:brn hgt:59in";
 
         private class Passport
         {
-            private static readonly HashSet<string> RequiredFields = new HashSet<string>
+            private static readonly ISet<string> ValidEyeColours = new HashSet<string> { "amb", "blu", "brn", "gry", "grn", "hzl", "oth" };
+            private static readonly IReadOnlyDictionary<string, Func<string, bool>> RequiredFieldValidators = new Dictionary<string, Func<string, bool>>
             {
-                "byr",
-                "iyr",
-                "eyr",
-                "hgt",
-                "hcl",
-                "ecl",
-                "pid",
+                { "byr", s => int.TryParse(s, out var x) && x >= 1920 && x <= 2002 },
+                { "iyr", s => int.TryParse(s, out var x) && x >= 2010 && x <= 2020 },
+                { "eyr", s => int.TryParse(s, out var x) && x >= 2020 && x <= 2030 },
+                { "hgt", ValidateHeight },
+                { "hcl", s => s.Length == 7 && s[0] == '#' && s.Skip(1).All(x => x.IsHexChar()) },
+                { "ecl", s => ValidEyeColours.Contains(s) },
+                { "pid", s => s.Length == 9 && s.All(x => x.IsDigit()) },
                 // "cid",
             };
 
@@ -86,9 +105,9 @@ iyr:2011 ecl:brn hgt:59in";
                 _fields = fields;
             }
 
-            public bool IsValid()
+            public bool HasRequiredFields()
             {
-                foreach (var fieldName in RequiredFields)
+                foreach (var fieldName in RequiredFieldValidators.Keys)
                 {
                     if (!_fields.ContainsKey(fieldName))
                     {
@@ -97,6 +116,39 @@ iyr:2011 ecl:brn hgt:59in";
                 }
 
                 return true;
+            }
+            public bool IsValid()
+            {
+                foreach (var (fieldName, validator) in RequiredFieldValidators)
+                {
+                    if (!_fields.TryGetValue(fieldName, out var fieldValue))
+                    {
+                        return false;
+                    }
+
+                    if (!validator(fieldValue))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            private static bool ValidateHeight(string s)
+            {
+                if(!int.TryParse(s[..^2], out var num))
+                {
+                    return false;
+                }
+
+                var units = s[^2..];
+                return units switch
+                {
+                    "cm" => num >= 150 && num <= 193,
+                    "in" => num >= 59 && num <= 76,
+                    _ => false,
+                };
             }
         }
 
