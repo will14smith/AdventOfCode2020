@@ -7,10 +7,12 @@ namespace AdventOfCode2020.Utilities
 {
     public static class SuperpowerExtensions
     {
+        public static readonly TextParser<string> NewLine = Character.EqualTo('\n').Select(_ => "\n").Or(Character.EqualTo('\r').Then(_ => Character.EqualTo('\n').Select(_ => "\n")));
+
         public static T MustParse<T>(this TextParser<T> parser, string input)
         {
             var result = parser(new TextSpan(input));
-            if(!result.HasValue) throw new Exception(result.FormatErrorMessageFragment());
+            if(!result.HasValue) throw new Exception(result.ToString());
 
             return result.Value;
         }
