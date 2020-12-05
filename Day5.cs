@@ -41,10 +41,41 @@ namespace AdventOfCode2020
             _output.Run("actual", () => GetLargestSeatId(data));
         }
 
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day5");
+
+            _output.Run("actual", () => FindMySeatId(data));
+        }
+
         private static int GetLargestSeatId(string input)
         {
             var seats = Seats.MustParse(input);
             return seats.Max(GetSeatId);
+        }
+
+        private static int FindMySeatId(string input)
+        {
+            var seats = Seats.MustParse(input).Select(GetSeatId).ToHashSet();
+
+            var minSeatId = seats.Min();
+            var maxSeatId = seats.Max();
+
+            for (var seatId = minSeatId; seatId <= maxSeatId; seatId++)
+            {
+                if (seats.Contains(seatId))
+                {
+                    continue;
+                }
+
+                if (seats.Contains(seatId - 1) && seats.Contains(seatId + 1))
+                {
+                    return seatId;
+                }
+            }
+
+            throw new Exception("Couldn't find seat");
         }
 
         private static int GetSeatId((int Row, int Col) pos) => pos.Row * 8 + pos.Col;
