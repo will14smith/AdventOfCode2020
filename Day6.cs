@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
@@ -15,9 +16,9 @@ namespace AdventOfCode2020
         private static readonly string Sample = "abc\n\na\nb\nc\n\nab\nac\n\na\na\na\na\n\nb";
 
         private static readonly TextParser<char> Answer = Character.Lower;
-        private static readonly TextParser<HashSet<char>> PersonAnswer = Answer.AtLeastOnce().Select(x => x.ToHashSet());
-        private static readonly TextParser<HashSet<char>[]> AnswerGroup = PersonAnswer.Try().AtLeastOnceDelimitedBy(SuperpowerExtensions.NewLine);
-        private static readonly TextParser<HashSet<char>[][]> AnswerGroups = AnswerGroup.Try().AtLeastOnceDelimitedBy(SuperpowerExtensions.NewLine.IgnoreThen(SuperpowerExtensions.NewLine));
+        private static readonly TextParser<Person> PersonAnswer = Answer.AtLeastOnce().Select(xs => new Person(xs));
+        private static readonly TextParser<Group> AnswerGroup = PersonAnswer.ThenIgnoreOptional(SuperpowerExtensions.NewLine).AtLeastOnce().Select(ps => new Group(ps));
+        private static readonly TextParser<Group[]> AnswerGroups = AnswerGroup.AtLeastOnceDelimitedBy(SuperpowerExtensions.NewLine).ThenIgnoreOptional(SuperpowerExtensions.NewLine);
 
         private readonly ITestOutputHelper _output;
 
@@ -52,21 +53,29 @@ namespace AdventOfCode2020
         {
             var answerGroups = AnswerGroups.MustParse(data);
 
-            return answerGroups.Sum(CountGroup);
-
-            static int CountGroup(HashSet<char>[] people) => people.SelectMany(x => x).ToHashSet().Count;
+            return answerGroups.Sum(g => g.CountUnique());
         }
 
         private static int GetDistinctAnswers(string data)
         {
             var answerGroups = AnswerGroups.MustParse(data);
 
-            return answerGroups.Sum(CountGroup);
+            return answerGroups.Sum(g => g.CountAll());
+        }
 
-            int CountGroup(HashSet<char>[] people)
-            {
-                return people.SelectMany(x => x).GroupBy(x => x).Count(x => x.Count() == people.Length);
-            }
+        private class Person
+        {
+            public ImmutableHashSet<char> Answers { get; }
+            public Person(IEnumerable<char> answers) => Answers = answers.ToImmutableHashSet();
+        }
+
+        private class Group
+        {
+            public IReadOnlyCollection<Person> People { get; }
+            public Group(IReadOnlyCollection<Person> people) => People = people;
+
+            public int CountUnique() => People.Select(x => x.Answers).Aggregate((a, p) => a.Union(p)).Count;
+            public int CountAll() => People.Select(x => x.Answers).Aggregate((a, p) => a.Intersect(p)).Count;
         }
 
         private static string LoadData(string fileName) =>

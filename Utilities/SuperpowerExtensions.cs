@@ -25,5 +25,21 @@ namespace AdventOfCode2020.Utilities
                 from _2 in Character.WhiteSpace.Many()
                 select result;
         }
+
+        public static TextParser<T> ThenIgnore<T, T2>(this TextParser<T> parser, TextParser<T2> ignoreParser)
+        {
+            return
+                from result in parser
+                from _ in ignoreParser
+                select result;
+        }
+
+        public static TextParser<T> ThenIgnoreOptional<T, T2>(this TextParser<T> parser, TextParser<T2> ignoreParser)
+        {
+            return
+                from result in parser
+                from _ in ignoreParser.OptionalOrDefault()
+                select result;
+        }
     }
 }
