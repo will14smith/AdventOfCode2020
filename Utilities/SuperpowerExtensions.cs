@@ -17,6 +17,15 @@ namespace AdventOfCode2020.Utilities
             return result.Value;
         }
 
+        public static T MustParse<TToken, T>(this TokenListParser<TToken, T> parser, Tokenizer<TToken> tokenizer, string input)
+        {
+            var tokens = tokenizer.Tokenize(input);
+            var result = parser(tokens);
+            if(!result.HasValue) throw new Exception(result.ToString());
+
+            return result.Value;
+        }
+
         public static TextParser<T> IgnoreWhitespace<T>(this TextParser<T> parser)
         {
             return
