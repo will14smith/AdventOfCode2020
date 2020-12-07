@@ -3,15 +3,12 @@ using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
-using Superpower;
-using Superpower.Parsers;
-using Superpower.Tokenizers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day7
+    public partial class Day7
     {
         private static readonly string Sample1 = @"light red bags contain 1 bright white bag, 2 muted yellow bags.
 dark orange bags contain 3 bright white bags, 4 muted yellow bags.
@@ -30,39 +27,6 @@ dark yellow bags contain 2 dark green bags.
 dark green bags contain 2 dark blue bags.
 dark blue bags contain 2 dark violet bags.
 dark violet bags contain no other bags.";
-
-        private static readonly Tokenizer<Day7Token> Tokenizer = new TokenizerBuilder<Day7Token>()
-            .Ignore(Span.WhiteSpace)
-            .Match(Character.EqualTo('.'), Day7Token.RuleEnd)
-            .Match(Character.EqualTo(','), Day7Token.ListSep)
-            .Match(Numerics.Integer, Day7Token.Number)
-            .Match(Span.EqualTo("bag").Then(_ => Character.EqualTo('s').Optional()), Day7Token.Bags)
-            .Match(Span.EqualTo("contain"), Day7Token.Contain)
-            .Match(Span.EqualTo("no other"), Day7Token.NoOther)
-            .Match(Character.Letter.AtLeastOnce(), Day7Token.Identifier)
-            .Build();
-
-        private static readonly TokenListParser<Day7Token, string> Bag =
-            from ident in Token.EqualTo(Day7Token.Identifier).AtLeastOnce()
-            from _bags in Token.EqualTo(Day7Token.Bags)
-            select string.Join(" ", ident.Select(x => x.ToStringValue()));
-        private static readonly TokenListParser<Day7Token, (int Count, string Bag)> CountedBag =
-            from count in Token.EqualTo(Day7Token.Number).Apply(Numerics.IntegerInt32)
-            from bag in Bag
-            select (count, bag);
-
-        private static readonly TokenListParser<Day7Token, Dictionary<string, int>> Inner =
-            CountedBag.AtLeastOnceDelimitedBy(Token.EqualTo(Day7Token.ListSep)).Select(xs => xs.ToDictionary(x => x.Bag, x => x.Count))
-                .Or(Token.Sequence(Day7Token.NoOther, Day7Token.Bags).Select(_ => new Dictionary<string, int>()));
-
-        private static readonly TokenListParser<Day7Token, Rule> RuleParser =
-            from outer in Bag
-            from _contain in Token.EqualTo(Day7Token.Contain)
-            from inner in Inner
-            from _end in Token.EqualTo(Day7Token.RuleEnd)
-            select new Rule(outer, inner);
-
-        private static readonly TokenListParser<Day7Token, Rule[]> Rules = RuleParser.AtLeastOnce();
 
         private readonly ITestOutputHelper _output;
 
@@ -87,10 +51,10 @@ dark violet bags contain no other bags.";
         {
             var data = LoadData("day7");
 
-            _output.Run("sample", () => CountInnerBags(Sample2, "shiny gold") - 1)
+            _output.Run("sample", () => CountInnerBags(Sample2, "shiny gold"))
                 .Should().Be(126);
 
-            _output.Run("actual", () => CountInnerBags(data, "shiny gold") - 1);
+            _output.Run("actual", () => CountInnerBags(data, "shiny gold"));
         }
 
         private static int CountOuterBags(string data, string target)
@@ -124,37 +88,12 @@ dark violet bags contain no other bags.";
         private static int CountInnerBags(string data, string target)
         {
             var rules = Rules.MustParse(Tokenizer, data).ToDictionary(x => x.Outer);
-            return CountInnerBags(rules, target);
-        }
-        private static int CountInnerBags(IReadOnlyDictionary<string, Rule> rules, string target)
-        {
-            return 1 + rules[target].Inner.Sum(x => x.Value * CountInnerBags(rules, x.Key));
-        }
+            return CountInner(rules, target) - 1;
 
-
-        private enum Day7Token
-        {
-            RuleEnd,
-            ListSep,
-            Number,
-            Bags,
-            Contain,
-            NoOther,
-            Identifier,
-        }
-
-        private class Rule
-        {
-            public string Outer { get; }
-            public IReadOnlyDictionary<string, int> Inner { get; }
-
-            public Rule(string outer, IReadOnlyDictionary<string, int> inner)
+            static int CountInner(IReadOnlyDictionary<string, Rule> rules, string target)
             {
-                Outer = outer;
-                Inner = inner;
+                return 1 + rules[target].Inner.Sum(x => x.Value * CountInner(rules, x.Key));
             }
-
-            public bool CanContain(string bag) => Inner.ContainsKey(bag);
         }
 
         private static string LoadData(string fileName) =>
