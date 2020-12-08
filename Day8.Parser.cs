@@ -14,7 +14,7 @@ namespace AdventOfCode2020
 
         private static readonly TokenListParser<TokenType, int> Num = Token.EqualTo(TokenType.Number).Apply(Numerics.IntegerInt32);
 
-        private static readonly TokenListParser<TokenType, Op> Nop = Token.EqualToValue(TokenType.OpCode, "nop").IgnoreThen(Num).Select(_ => (Op) new Op.Nop());
+        private static readonly TokenListParser<TokenType, Op> Nop = Token.EqualToValue(TokenType.OpCode, "nop").IgnoreThen(Num).Select(n => (Op) new Op.Nop(n));
         private static readonly TokenListParser<TokenType, Op> Acc = Token.EqualToValue(TokenType.OpCode, "acc").IgnoreThen(Num).Select(n => (Op) new Op.Acc(n));
         private static readonly TokenListParser<TokenType, Op> Jmp = Token.EqualToValue(TokenType.OpCode, "jmp").IgnoreThen(Num).Select(n => (Op) new Op.Jmp(n));
 
@@ -25,6 +25,8 @@ namespace AdventOfCode2020
         {
             public class Nop : Op
             {
+                public int Value { get; }
+                public Nop(in int value) => Value = value;
             }
 
             public class Acc : Op

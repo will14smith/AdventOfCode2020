@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace AdventOfCode2020
@@ -8,6 +7,11 @@ namespace AdventOfCode2020
     {
         private static State Step(State state)
         {
+            if (state.IP >= state.Instructions.Count)
+            {
+                return state;
+            }
+
             var instruction = state.Instructions[state.IP];
 
             return instruction switch
@@ -35,7 +39,7 @@ namespace AdventOfCode2020
             public int Acc { get; }
 
 
-            public static State InitialFrom(IEnumerable<Op> instructions) => new State(instructions.ToImmutableList(), 0, 0);
+            public static State InitialFrom(ImmutableList<Op> instructions) => new State(instructions, 0, 0);
 
             public State IncIP(int delta) => new State(Instructions, IP + delta, Acc);
             public State IncAcc(int delta) => new State(Instructions, IP, Acc + delta);
