@@ -35,6 +35,17 @@ namespace AdventOfCode2020
             _output.Run("actual", () => FindFirstInconsistency(data, 25));
         }
 
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day9");
+
+            _output.Run("sample", () => FindInconsistencyRangeSum(Sample, 127))
+                .Should().Be(62);
+
+            _output.Run("actual", () => FindInconsistencyRangeSum(data, 400480901));
+        }
+
         private long FindFirstInconsistency(IReadOnlyList<long> data, int size)
         {
             var d = new ConcurrentDictionary<long, int>();
@@ -85,6 +96,32 @@ namespace AdventOfCode2020
             {
                 d.TryRemove(v, out _);
             }
+        }
+
+        private static long FindInconsistencyRangeSum(IReadOnlyList<long> data, int target)
+        {
+            var (start, end) = FindInconsistencyRange(data, target);
+            return start + end;
+        }
+
+        private static (long, long) FindInconsistencyRange(IReadOnlyList<long> data, int target)
+        {
+            for (var startIndex = 0; startIndex < data.Count; startIndex++)
+            {
+                var sum = data[startIndex];
+
+                for (var endIndex = startIndex + 1; endIndex < data.Count; endIndex++)
+                {
+                    sum += data[endIndex];
+                    if (sum == target)
+                    {
+                        var range = data.Skip(startIndex).Take(endIndex - startIndex + 1).ToList();
+                        return (range.Min(), range.Max());
+                    }
+                }
+            }
+
+            throw new Exception("no range");
         }
 
         private static IReadOnlyList<long> LoadData(string fileName) =>
