@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
+using Medallion.Collections;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -37,6 +39,19 @@ namespace AdventOfCode2020
             _output.Run("actual", () => SolvePart1(data));
         }
 
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day10");
+
+            _output.Run("sample1", () => CountCombinations(Sample1))
+                .Should().Be(8);
+            _output.Run("sample2", () => CountCombinations(Sample2))
+                .Should().Be(19208);
+
+            _output.Run("actual", () => CountCombinations(data));
+        }
+
         private long SolvePart1(IReadOnlyList<long> data)
         {
             var distribution = FindDistribution(data);
@@ -47,7 +62,7 @@ namespace AdventOfCode2020
             return n1 * (n3 + 1);
         }
 
-        private ConcurrentDictionary<int, int> FindDistribution(IReadOnlyList<long> data)
+        private ConcurrentDictionary<int, int> FindDistribution(IEnumerable<long> data)
         {
             var dist = new ConcurrentDictionary<int, int>();
 
@@ -59,6 +74,58 @@ namespace AdventOfCode2020
             }
 
             return dist;
+        }
+
+        private long CountCombinations(IEnumerable<long> data)
+        {
+            var orderedData = data.OrderBy(x => x).ToImmutableLinkedList();
+
+            return CountCombinations(orderedData.Prepend(0), new Dictionary<int, long>());
+        }
+
+        private static long CountCombinations(in ImmutableLinkedList<long> data, Dictionary<int, long> memo)
+        {
+            // assume the head node is not skipped
+            if (memo.TryGetValue(data.Count, out var memoResult)) return memoResult;
+
+            if (data.Count == 0) return 1;
+
+            var combinations = 0L;
+
+            // 1, 2, 3, 4
+            // ^
+            // combines = 1 : 2 ...
+            // combines = 1 : 3 ...
+            // combines = 1 : 4 ...
+            var skip0 = CanSkip(data, 0);
+            var skip1 = CanSkip(data, 1);
+
+            combinations += CountCombinations(data.Tail, memo);
+            if(skip0) combinations += CountCombinations(data.Tail.Tail, memo);
+            if(skip1) combinations += CountCombinations(data.Tail.Tail.Tail, memo);
+
+            memo.Add(data.Count, combinations);
+
+            return combinations;
+        }
+
+        private static bool CanSkip(ImmutableLinkedList<long> data, int count)
+        {
+            if (data.Count < count + 3)
+            {
+                return false;
+            }
+
+            var head = data.Head;
+            data = Skip(data.Tail, count + 1);
+
+            return data.Head - head <= 3;
+        }
+
+        private static ImmutableLinkedList<long> Skip(ImmutableLinkedList<long> data, int count)
+        {
+            while (count-- > 0) data = data.Tail;
+            return data;
         }
 
         private static IReadOnlyList<long> LoadData(string fileName) =>
