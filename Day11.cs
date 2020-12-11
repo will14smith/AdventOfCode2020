@@ -19,6 +19,8 @@ namespace AdventOfCode2020
         private static readonly TextParser<State[]> Row = Seat.AtLeastOnce().ThenIgnore(SuperpowerExtensions.NewLine);
         private static readonly TextParser<State[][]> Room = Row.AtLeastOnce();
 
+        private static readonly IReadOnlyCollection<(int DeltaRow, int DeltaCol)> AdjacencyVectors = new[] { (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1) };
+
         private readonly ITestOutputHelper _output;
 
         public Day11(ITestOutputHelper output)
@@ -51,80 +53,37 @@ namespace AdventOfCode2020
         private long SolvePart1(string input)
         {
             var seats = Room.MustParse(input);
-            var room = new RoomState(seats, CalculateAdjPart1(seats), 4);
+            var room = new RoomState(seats, CalculateAdj(seats, CalculateAdjPart1), 4);
 
-            var changed = true;
-            var i = 0;
-            while (changed)
-            {
-                (room, changed) = Next(room);
-            }
-
-            return room.Seats.SelectMany(x => x).Count(x => x == State.Occupied);
+            return CountStableOccupiedSeats(room);
         }
 
-        private IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> CalculateAdjPart1(State[][] seats)
+        private static (int, int)[] CalculateAdjPart1(State[][] _, int r, int c)
         {
-            var adj = new Dictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>>();
-
-            for (var r = 0; r < seats.Length; r++)
-            {
-                for (var c = 0; c < seats[r].Length; c++)
-                {
-                    adj.Add((r, c), new[]
-                    {
-                        // TL, T, TR, L, R, BL, B, BL
-                        (r-1, c-1),(r-1, c), (r-1, c+1),
-                        (r, c-1),(r, c+1),
-                        (r+1, c-1),(r+1, c), (r+1, c+1),
-                    });
-                }
-            }
-
-            return adj;
+            return AdjacencyVectors.Select(x => (r + x.DeltaRow, c + x.DeltaCol)).ToArray();
         }
 
         private long SolvePart2(string input)
         {
             var seats = Room.MustParse(input);
-            var room = new RoomState(seats, CalculateAdjPart2(seats), 5);
+            var room = new RoomState(seats, CalculateAdj(seats, CalculateAdjPart2), 5);
 
-            var changed = true;
-            var i = 0;
-            while (changed)
-            {
-                (room, changed) = Next(room);
-            }
-
-            return room.Seats.SelectMany(x => x).Count(x => x == State.Occupied);
+            return CountStableOccupiedSeats(room);
         }
 
-        private IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> CalculateAdjPart2(State[][] seats)
+        private static List<(int R, int C)> CalculateAdjPart2(State[][] seats, int r, int c)
         {
-            var adj = new Dictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>>();
+            var cellAdj = new List<(int R, int C)>();
 
-            for (var r = 0; r < seats.Length; r++)
+            foreach (var (deltaRow, deltaCol) in AdjacencyVectors)
             {
-                for (var c = 0; c < seats[r].Length; c++)
-                {
-                    var a = new List<(int R, int C)>();
-                    TryFindAdjSeat2(seats, r, c, -1, -1, a);
-                    TryFindAdjSeat2(seats, r, c, -1, 0, a);
-                    TryFindAdjSeat2(seats, r, c, -1, 1, a);
-                    TryFindAdjSeat2(seats, r, c, 0, -1, a);
-                    TryFindAdjSeat2(seats, r, c, 0, 1, a);
-                    TryFindAdjSeat2(seats, r, c, 1, -1, a);
-                    TryFindAdjSeat2(seats, r, c, 1, 0, a);
-                    TryFindAdjSeat2(seats, r, c, 1, 1, a);
-
-                    adj.Add((r, c), a);
-                }
+                TryFindAdjSeat2(seats, r, c, deltaRow, deltaCol, cellAdj);
             }
 
-            return adj;
+            return cellAdj;
         }
 
-        private void TryFindAdjSeat2(State[][] seats, int r, int c, int dr, int dc, List<(int R, int C)> res)
+        private static void TryFindAdjSeat2(State[][] seats, int r, int c, int dr, int dc, List<(int R, int C)> res)
         {
             r += dr;
             c += dc;
@@ -142,7 +101,34 @@ namespace AdventOfCode2020
             }
         }
 
-        private (RoomState Next, bool Changed) Next(RoomState input)
+
+        private IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> CalculateAdj(State[][] seats, Func<State[][], int, int, IReadOnlyCollection<(int R, int C)>> calculateAdj)
+        {
+            var adj = new Dictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>>();
+
+            for (var r = 0; r < seats.Length; r++)
+            {
+                for (var c = 0; c < seats[r].Length; c++)
+                {
+                    adj.Add((r, c), calculateAdj(seats, r, c));
+                }
+            }
+
+            return adj;
+        }
+
+        private static long CountStableOccupiedSeats(RoomState room)
+        {
+            var changed = true;
+            while (changed)
+            {
+                (room, changed) = Next(room);
+            }
+
+            return room.Seats.SelectMany(x => x).Count(x => x == State.Occupied);
+        }
+
+        private static (RoomState Next, bool Changed) Next(RoomState input)
         {
             var changed = false;
             var next = new State[input.Seats.Length][];
@@ -165,14 +151,6 @@ namespace AdventOfCode2020
         {
             var seats = input.Seats;
             if (seats[r][c] == State.NoSeat) return State.NoSeat;
-
-            // var adj = new[]
-            // {
-            //     // TL, T, TR, L, R, BL, B, BL
-            //     (r-1, c-1),(r-1, c), (r-1, c+1),
-            //     (r, c-1),(r, c+1),
-            //     (r+1, c-1),(r+1, c), (r+1, c+1),
-            // };
 
             var occ = 0;
             foreach (var (rAdj, cAdj) in input.Adjacent[(r, c)])
