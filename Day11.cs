@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
@@ -30,15 +31,27 @@ namespace AdventOfCode2020
         {
             var data = LoadData("day11");
 
-            _output.Run("sample1", () => SolvePart1(Sample))
+            _output.Run("sample", () => SolvePart1(Sample))
                 .Should().Be(37);
 
             _output.Run("actual", () => SolvePart1(data));
         }
 
+        [Fact]
+        public void Part2()
+        {
+            var data = LoadData("day11");
+
+            _output.Run("sample", () => SolvePart2(Sample))
+                .Should().Be(26);
+
+            _output.Run("actual", () => SolvePart2(data));
+        }
+
         private long SolvePart1(string input)
         {
-            var room = Room.MustParse(input);
+            var seats = Room.MustParse(input);
+            var room = new RoomState(seats, CalculateAdjPart1(seats), 4);
 
             var changed = true;
             var i = 0;
@@ -47,54 +60,152 @@ namespace AdventOfCode2020
                 (room, changed) = Next(room);
             }
 
-            return room.SelectMany(x => x).Count(x => x == State.Occupied);
+            return room.Seats.SelectMany(x => x).Count(x => x == State.Occupied);
         }
 
-        private (State[][] Next, bool Changed) Next(State[][] input)
+        private IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> CalculateAdjPart1(State[][] seats)
         {
-            var changed = false;
-            var next = new State[input.Length][];
+            var adj = new Dictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>>();
 
-            for (var r = 0; r < input.Length; r++)
+            for (var r = 0; r < seats.Length; r++)
             {
-                next[r] = new State[input[r].Length];
-
-                for (var c = 0; c < input[r].Length; c++)
+                for (var c = 0; c < seats[r].Length; c++)
                 {
-                    next[r][c] = Next(input, r, c);
-                    changed |= input[r][c] != next[r][c];
+                    adj.Add((r, c), new[]
+                    {
+                        // TL, T, TR, L, R, BL, B, BL
+                        (r-1, c-1),(r-1, c), (r-1, c+1),
+                        (r, c-1),(r, c+1),
+                        (r+1, c-1),(r+1, c), (r+1, c+1),
+                    });
                 }
             }
 
-            return (next, changed);
+            return adj;
         }
 
-        private static State Next(in State[][] input, in int r, in int c)
+        private long SolvePart2(string input)
         {
-            if (input[r][c] == State.NoSeat) return State.NoSeat;
+            var seats = Room.MustParse(input);
+            var room = new RoomState(seats, CalculateAdjPart2(seats), 5);
 
-            var adj = new[]
+            var changed = true;
+            var i = 0;
+            while (changed)
             {
-                // TL, T, TR, L, R, BL, B, BL
-                (r-1, c-1),(r-1, c), (r-1, c+1),
-                (r, c-1),(r, c+1),
-                (r+1, c-1),(r+1, c), (r+1, c+1),
-            };
+                (room, changed) = Next(room);
+            }
+
+            return room.Seats.SelectMany(x => x).Count(x => x == State.Occupied);
+        }
+
+        private IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> CalculateAdjPart2(State[][] seats)
+        {
+            var adj = new Dictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>>();
+
+            for (var r = 0; r < seats.Length; r++)
+            {
+                for (var c = 0; c < seats[r].Length; c++)
+                {
+                    var a = new List<(int R, int C)>();
+                    TryFindAdjSeat2(seats, r, c, -1, -1, a);
+                    TryFindAdjSeat2(seats, r, c, -1, 0, a);
+                    TryFindAdjSeat2(seats, r, c, -1, 1, a);
+                    TryFindAdjSeat2(seats, r, c, 0, -1, a);
+                    TryFindAdjSeat2(seats, r, c, 0, 1, a);
+                    TryFindAdjSeat2(seats, r, c, 1, -1, a);
+                    TryFindAdjSeat2(seats, r, c, 1, 0, a);
+                    TryFindAdjSeat2(seats, r, c, 1, 1, a);
+
+                    adj.Add((r, c), a);
+                }
+            }
+
+            return adj;
+        }
+
+        private void TryFindAdjSeat2(State[][] seats, int r, int c, int dr, int dc, List<(int R, int C)> res)
+        {
+            r += dr;
+            c += dc;
+
+            while (r >= 0 && r < seats.Length && c >= 0 && c < seats[r].Length)
+            {
+                if (seats[r][c] != State.NoSeat)
+                {
+                    res.Add((r, c));
+                    break;
+                }
+
+                r += dr;
+                c += dc;
+            }
+        }
+
+        private (RoomState Next, bool Changed) Next(RoomState input)
+        {
+            var changed = false;
+            var next = new State[input.Seats.Length][];
+
+            for (var r = 0; r < input.Seats.Length; r++)
+            {
+                next[r] = new State[input.Seats[r].Length];
+
+                for (var c = 0; c < input.Seats[r].Length; c++)
+                {
+                    next[r][c] = Next(input, r, c);
+                    changed |= input.Seats[r][c] != next[r][c];
+                }
+            }
+
+            return (input.WithSeats(next), changed);
+        }
+
+        private static State Next(in RoomState input, in int r, in int c)
+        {
+            var seats = input.Seats;
+            if (seats[r][c] == State.NoSeat) return State.NoSeat;
+
+            // var adj = new[]
+            // {
+            //     // TL, T, TR, L, R, BL, B, BL
+            //     (r-1, c-1),(r-1, c), (r-1, c+1),
+            //     (r, c-1),(r, c+1),
+            //     (r+1, c-1),(r+1, c), (r+1, c+1),
+            // };
 
             var occ = 0;
-            foreach (var (rAdj, cAdj) in adj)
+            foreach (var (rAdj, cAdj) in input.Adjacent[(r, c)])
             {
-                if (rAdj >= 0 && rAdj < input.Length && cAdj >= 0 && cAdj < input[rAdj].Length)
+                if (rAdj >= 0 && rAdj < seats.Length && cAdj >= 0 && cAdj < seats[rAdj].Length)
                 {
-                    occ += input[rAdj][cAdj] == State.Occupied ? 1 : 0;
+                    occ += seats[rAdj][cAdj] == State.Occupied ? 1 : 0;
                 }
             }
 
             if (occ == 0) return State.Occupied;
-            if (occ >= 4) return State.Empty;
-            return input[r][c];
+            if (occ >= input.Tolerance) return State.Empty;
+            return seats[r][c];
         }
 
+        private class RoomState
+        {
+            public RoomState(State[][] seats, IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> adjacent, int tolerance)
+            {
+                Seats = seats;
+                Adjacent = adjacent;
+                Tolerance = tolerance;
+            }
+
+            public State[][] Seats { get; }
+            public IReadOnlyDictionary<(int R, int C), IReadOnlyCollection<(int R, int C)>> Adjacent { get; }
+            public int Tolerance { get; }
+
+            public RoomState WithSeats(State[][] seats)
+            {
+                return new RoomState(seats, Adjacent, Tolerance);
+            }
+        }
         private enum State
         {
             NoSeat,
