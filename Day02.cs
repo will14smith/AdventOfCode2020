@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
@@ -11,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day2
+    public class Day02 : Test
     {
         private static readonly IEnumerable<string> Sample = new[] { "1-3 a: abcde", "1-3 b: cdefg", "2-9 c: ccccccccc" };
 
@@ -28,22 +27,13 @@ namespace AdventOfCode2020
             from pwd in Character.AnyChar.Many()
             select new Input(range.Min, range.Max, target, new string(pwd));
 
-        private readonly ITestOutputHelper _output;
-
-        public Day2(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day02(ITestOutputHelper output) : base(2, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day2");
-
-            _output.Run("sample", () => CountValidPasswords(Sample, IsValidPart1))
-                .Should().Be(2);
-
-            _output.Run("actual", () => CountValidPasswords(data, IsValidPart1));
+            Run("sample", Sample, data => CountValidPasswords(data, IsValidPart1)).Should().Be(2);
+            Run("actual", LoadInputLines(),  data => CountValidPasswords(data, IsValidPart1));
 
             static bool IsValidPart1(Input input)
             {
@@ -55,12 +45,8 @@ namespace AdventOfCode2020
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day2");
-
-            _output.Run("sample", () => CountValidPasswords(Sample, IsValidPart2))
-                .Should().Be(1);
-
-            _output.Run("actual", () => CountValidPasswords(data, IsValidPart2));
+            Run("sample", Sample, data => CountValidPasswords(data, IsValidPart2)).Should().Be(1);
+            Run("actual", LoadInputLines(),  data => CountValidPasswords(data, IsValidPart2));
 
             static bool IsValidPart2(Input input)
             {
@@ -75,9 +61,6 @@ namespace AdventOfCode2020
         {
             return data.Select(x => InputParser.MustParse(x)).Count(isValid);
         }
-
-        private static IReadOnlyCollection<string> LoadData(string fileName) =>
-            File.ReadAllLines(Path.Combine("Inputs", fileName));
 
         private class Input
         {

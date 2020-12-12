@@ -6,7 +6,7 @@ using Superpower.Tokenizers;
 
 namespace AdventOfCode2020
 {
-    public partial class Day7
+    public partial class Day07
     {
         private static readonly Tokenizer<Day7Token> Tokenizer = new TokenizerBuilder<Day7Token>()
             .Ignore(Span.WhiteSpace)

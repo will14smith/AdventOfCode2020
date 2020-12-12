@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
 using Superpower;
-using Superpower.Model;
 using Superpower.Parsers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day4
+    public class Day04 : Test
     {
         private static readonly string Sample = @"ecl:gry pid:860033327 eyr:2020 hcl:#fffffd
 byr:1937 iyr:2017 cid:147 hgt:183cm
@@ -42,33 +40,20 @@ iyr:2011 ecl:brn hgt:59in";
         private static readonly TextParser<string> PassportSep = SuperpowerExtensions.NewLine.Then(_ => SuperpowerExtensions.NewLine);
         private static readonly TextParser<Passport[]> PassportsParser = PassportParser.ManyDelimitedBy(PassportSep);
 
-        private readonly ITestOutputHelper _output;
-
-        public Day4(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day04(ITestOutputHelper output) : base(4, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day4");
-
-            _output.Run("sample", () => CountValidPassports1(Sample))
-                .Should().Be(2);
-
-            _output.Run("actual", () => CountValidPassports1(data));
+            Run("sample", Sample, CountValidPassports1).Should().Be(2);
+            Run("actual", LoadInput(), CountValidPassports1);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day4");
-
-            _output.Run("sample", () => CountValidPassports2(Sample))
-                .Should().Be(2);
-
-            _output.Run("actual", () => CountValidPassports2(data));
+            Run("sample", Sample, CountValidPassports2).Should().Be(2);
+            Run("actual", LoadInput(), CountValidPassports2);
         }
 
         private static int CountValidPassports1(string input)
@@ -151,8 +136,5 @@ iyr:2011 ecl:brn hgt:59in";
                 };
             }
         }
-
-        private static string LoadData(string fileName) =>
-            File.ReadAllText(Path.Combine("Inputs", fileName));
     }
 }

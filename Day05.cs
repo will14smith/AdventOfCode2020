@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
 using Superpower;
-using Superpower.Model;
 using Superpower.Parsers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day5
+    public class Day05 : Test
     {
         private static readonly string Sample = "BFFFBBFRRR\nFFFBBBFRRR\nBBFFBBFRLL";
 
@@ -23,30 +20,19 @@ namespace AdventOfCode2020
         private static readonly TextParser<(int Row, int Col)> Seat = Row.Then(r => Col.Select(c => (r, c)));
         private static readonly TextParser<(int Row, int Col)[]> Seats = Seat.ManyDelimitedBy(SuperpowerExtensions.NewLine);
 
-        private readonly ITestOutputHelper _output;
-
-        public Day5(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day05(ITestOutputHelper output) : base(5, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day5");
-
-            _output.Run("sample", () => GetLargestSeatId(Sample))
-                .Should().Be(820);
-
-            _output.Run("actual", () => GetLargestSeatId(data));
+            Run("sample", Sample, GetLargestSeatId).Should().Be(820);
+            Run("actual", LoadInput(), GetLargestSeatId);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day5");
-
-            _output.Run("actual", () => FindMySeatId(data));
+            Run("actual", LoadInput(), FindMySeatId);
         }
 
         private static int GetLargestSeatId(string input)
@@ -79,8 +65,5 @@ namespace AdventOfCode2020
         }
 
         private static int GetSeatId((int Row, int Col) pos) => pos.Row * 8 + pos.Col;
-
-        private static string LoadData(string fileName) =>
-            File.ReadAllText(Path.Combine("Inputs", fileName));
     }
 }

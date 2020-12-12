@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace AdventOfCode2020
 {
-    public partial class Day8
+    public partial class Day08
     {
         private static State Step(State state)
         {

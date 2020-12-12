@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using AdventOfCode2020.Utilities;
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -11,23 +11,13 @@ namespace AdventOfCode2020
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day12");
-
-            _output.Run("sample", () => SolvePart2(Sample))
-                .Should().Be(286);
-
-            _output.Run("actual", () => SolvePart2(data));
+            Run("sample", Sample, Tokenizer, Instructions, SolvePart2).Should().Be(286);
+            Run("actual", Tokenizer, Instructions, SolvePart2);
         }
 
-        private int SolvePart2(string input)
+        private static int SolvePart2(Op[] instructions)
         {
-            var instructions = Instructions.MustParse(Tokenizer, input);
-
-            var state = StatePart2.Initial;
-            foreach (var instruction in instructions)
-            {
-                state = Apply(state, instruction);
-            }
+            var state = instructions.Aggregate(StatePart2.Initial, Apply);
 
             return Math.Abs(state.Ship.X) + Math.Abs(state.Ship.Y);
         }

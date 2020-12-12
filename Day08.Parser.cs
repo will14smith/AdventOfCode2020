@@ -1,10 +1,11 @@
-﻿using Superpower;
+﻿using System.Collections.Immutable;
+using Superpower;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
 
 namespace AdventOfCode2020
 {
-    public partial class Day8
+    public partial class Day08
     {
         private static readonly Tokenizer<TokenType> Tokenizer = new TokenizerBuilder<TokenType>()
             .Ignore(Span.WhiteSpace)
@@ -19,7 +20,7 @@ namespace AdventOfCode2020
         private static readonly TokenListParser<TokenType, Op> Jmp = Token.EqualToValue(TokenType.OpCode, "jmp").IgnoreThen(Num).Select(n => (Op) new Op.Jmp(n));
 
         private static readonly TokenListParser<TokenType, Op> Instruction = Nop.Or(Acc).Or(Jmp);
-        private static readonly TokenListParser<TokenType, Op[]> Instructions = Instruction.AtLeastOnce();
+        private static readonly TokenListParser<TokenType, ImmutableList<Op>> Instructions = Instruction.AtLeastOnce().Select(x => x.ToImmutableList());
 
         private abstract class Op
         {

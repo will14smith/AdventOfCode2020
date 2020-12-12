@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
 using Xunit;
@@ -9,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public partial class Day8
+    public partial class Day08 : Test
     {
         private const string Sample = @"nop +0
 acc +1
@@ -21,40 +20,22 @@ acc +1
 jmp -4
 acc +6";
 
-        private readonly ITestOutputHelper _output;
-
-        public Day8(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day08(ITestOutputHelper output) : base(8, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day8");
-
-            _output.Run("sample", () => EvaluateUntilFirstRepeat(Sample).Acc)
-                .Should().Be(5);
-
-            _output.Run("actual", () => EvaluateUntilFirstRepeat(data).Acc);
+            Run("sample", Sample, Tokenizer, Instructions, x => EvaluateUntilFirstRepeat(x).Acc).Should().Be(5);
+            Run("actual", Tokenizer, Instructions, x => EvaluateUntilFirstRepeat(x).Acc);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day8");
-
-            _output.Run("sample", () => FixAndEvaluate(Sample))
-                .Should().Be((8, 7));
-
-            _output.Run("actual", () => FixAndEvaluate(data));
+            Run("sample", Sample, Tokenizer, Instructions, FixAndEvaluate).Should().Be((8, 7));
+            Run("actual", Tokenizer, Instructions, FixAndEvaluate);
         }
 
-        private static State EvaluateUntilFirstRepeat(string input)
-        {
-            var instructions = Instructions.MustParse(Tokenizer, input).ToImmutableList();
-            return EvaluateUntilFirstRepeat(instructions);
-        }
         private static State EvaluateUntilFirstRepeat(ImmutableList<Op> instructions)
         {
             var state = State.InitialFrom(instructions);
@@ -70,10 +51,8 @@ acc +6";
             return state;
         }
 
-        private static (int FinalAcc, int BrokenIP) FixAndEvaluate(string input)
+        private static (int FinalAcc, int BrokenIP) FixAndEvaluate(ImmutableList<Op> instructions)
         {
-            var instructions = Instructions.MustParse(Tokenizer, input).ToImmutableList();
-
             for (var i = 0; i < instructions.Count; i++)
             {
                 var state = TryFixAndEvaluate(instructions, i);
@@ -101,8 +80,5 @@ acc +6";
 
             return EvaluateUntilFirstRepeat(instructions.SetItem(ip, op));
         }
-
-        private static string LoadData(string fileName) =>
-            File.ReadAllText(Path.Combine("Inputs", fileName));
     }
 }

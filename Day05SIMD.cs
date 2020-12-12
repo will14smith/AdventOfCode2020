@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
@@ -12,37 +10,26 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day5SIMD
+    public class Day05SIMD : Test
     {
         private static readonly byte[] Sample = Encoding.ASCII.GetBytes("BFFFBBFRRR\nFFFBBBFRRR\nBBFFBBFRLL\nBFFFBBFRRR\nFFFBBBFRRR");
 
         private static readonly Vector256<byte> CharMask = Vector256.Create(4774451407314113106, 4774469068483347010, 5931814938896122434, 4774451407313060434).AsByte();
         private static readonly Vector256<byte> ShuffleControl = Vector256.Create(1736447835066146335, 1157726452361532951, 579005069656919567, 283686952306183).AsByte();
 
-        private readonly ITestOutputHelper _output;
-
-        public Day5SIMD(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day05SIMD(ITestOutputHelper output) : base(5, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day5");
-
-            _output.Run("sample", () => GetLargestSeatId(Sample))
-                .Should().Be(820);
-
-            _output.Run("actual", () => GetLargestSeatId(data));
+            Run("sample", Sample, GetLargestSeatId).Should().Be(820);
+            Run("actual", LoadRawInput(), GetLargestSeatId);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day5");
-
-            _output.Run("actual", () => FindMySeatId(data));
+            Run("actual", LoadRawInput(), FindMySeatId);
         }
 
         private static unsafe int GetLargestSeatId(byte[] input)
@@ -154,8 +141,5 @@ namespace AdventOfCode2020
             v = Avx2.CompareEqual(v, c);
             return Avx2.MoveMask(v);
         }
-
-        private static byte[] LoadData(string fileName) =>
-            File.ReadAllBytes(Path.Combine("Inputs", fileName));
     }
 }

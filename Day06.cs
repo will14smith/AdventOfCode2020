@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
@@ -11,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day6
+    public class Day06 : Test
     {
         private static readonly string Sample = "abc\n\na\nb\nc\n\nab\nac\n\na\na\na\na\n\nb";
 
@@ -20,33 +19,20 @@ namespace AdventOfCode2020
         private static readonly TextParser<Group> AnswerGroup = PersonAnswer.ThenIgnoreOptional(SuperpowerExtensions.NewLine).AtLeastOnce().Select(ps => new Group(ps));
         private static readonly TextParser<Group[]> AnswerGroups = AnswerGroup.AtLeastOnceDelimitedBy(SuperpowerExtensions.NewLine).ThenIgnoreOptional(SuperpowerExtensions.NewLine);
 
-        private readonly ITestOutputHelper _output;
-
-        public Day6(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day06(ITestOutputHelper output) : base(6, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day6");
-
-            _output.Run("sample", () => GetUniqueAnswers(Sample))
-                .Should().Be(11);
-
-            _output.Run("actual", () => GetUniqueAnswers(data));
+            Run("sample", Sample, GetUniqueAnswers).Should().Be(11);
+            Run("actual", LoadInput(), GetUniqueAnswers);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day6");
-
-            _output.Run("sample", () => GetDistinctAnswers(Sample))
-                .Should().Be(6);
-
-            _output.Run("actual", () => GetDistinctAnswers(data));
+            Run("sample", Sample, GetDistinctAnswers).Should().Be(6);
+            Run("actual", LoadInput(), GetDistinctAnswers);
         }
 
         private static int GetUniqueAnswers(string data)
@@ -77,8 +63,5 @@ namespace AdventOfCode2020
             public int CountUnique() => People.Select(x => x.Answers).Aggregate((a, p) => a.Union(p)).Count;
             public int CountAll() => People.Select(x => x.Answers).Aggregate((a, p) => a.Intersect(p)).Count;
         }
-
-        private static string LoadData(string fileName) =>
-            File.ReadAllText(Path.Combine("Inputs", fileName));
     }
 }

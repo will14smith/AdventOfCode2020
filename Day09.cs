@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
@@ -10,40 +9,24 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day9
+    public class Day09 : Test
     {
-        private static readonly IReadOnlyList<long> Sample = "35\n20\n15\n25\n47\n40\n62\n55\n65\n95\n102\n117\n150\n182\n127\n219\n299\n277\n309\n576"
-            .Split("\n")
-            .Select(long.Parse)
-            .ToList();
+        private const string Sample = "35\n20\n15\n25\n47\n40\n62\n55\n65\n95\n102\n117\n150\n182\n127\n219\n299\n277\n309\n576";
 
-        private readonly ITestOutputHelper _output;
-
-        public Day9(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day09(ITestOutputHelper output) : base(9, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day9");
-
-            _output.Run("sample", () => FindFirstInconsistency(Sample, 5))
-                .Should().Be(127);
-
-            _output.Run("actual", () => FindFirstInconsistency(data, 25));
+            Run("sample", Sample, Parse, data => FindFirstInconsistency(data, 5)).Should().Be(127);
+            Run("actual", Parse, data => FindFirstInconsistency(data, 25));
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day9");
-
-            _output.Run("sample", () => FindInconsistencyRangeSum(Sample, 127))
-                .Should().Be(62);
-
-            _output.Run("actual", () => FindInconsistencyRangeSum(data, 400480901));
+            Run("sample", Sample, Parse, data => FindInconsistencyRangeSum(data, 127)).Should().Be(62);
+            Run("actual", Parse, data => FindInconsistencyRangeSum(data, 400480901));
         }
 
         private long FindFirstInconsistency(IReadOnlyList<long> data, int size)
@@ -84,12 +67,12 @@ namespace AdventOfCode2020
             return false;
         }
 
-        private void Add(ConcurrentDictionary<long, int> d, long v)
+        private static void Add(ConcurrentDictionary<long, int> d, long v)
         {
             d.AddOrUpdate(v, k => 1, (k, c) => c + 1);
         }
 
-        private void Remove(ConcurrentDictionary<long, int> d, long v)
+        private static void Remove(ConcurrentDictionary<long, int> d, long v)
         {
             var newC = d.AddOrUpdate(v, k => 0, (k, c) => c - 1);
             if (newC == 0)
@@ -124,7 +107,6 @@ namespace AdventOfCode2020
             throw new Exception("no range");
         }
 
-        private static IReadOnlyList<long> LoadData(string fileName) =>
-            File.ReadAllLines(Path.Combine("Inputs", fileName)).Select(long.Parse).ToList();
+        private static IReadOnlyList<long> Parse(string input) => input.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(long.Parse).ToList();
     }
 }

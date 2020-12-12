@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
@@ -12,47 +10,30 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day10
+    public class Day10 : Test
     {
-        private static readonly IReadOnlyList<long> Sample1 = "16\n10\n15\n5\n1\n11\n7\n19\n6\n12\n4"
-            .Split("\n").Select(long.Parse).ToList();
-        private static readonly IReadOnlyList<long> Sample2 = "28\n33\n18\n42\n31\n14\n46\n20\n48\n47\n24\n23\n49\n45\n19\n38\n39\n11\n1\n32\n25\n35\n8\n17\n7\n9\n4\n2\n34\n10\n3"
-            .Split("\n").Select(long.Parse).ToList();
+        private const string Sample1 = "16\n10\n15\n5\n1\n11\n7\n19\n6\n12\n4";
+        private const string Sample2 = "28\n33\n18\n42\n31\n14\n46\n20\n48\n47\n24\n23\n49\n45\n19\n38\n39\n11\n1\n32\n25\n35\n8\n17\n7\n9\n4\n2\n34\n10\n3";
 
-        private readonly ITestOutputHelper _output;
-
-        public Day10(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day10(ITestOutputHelper output) : base(10, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day10");
-
-            _output.Run("sample1", () => SolvePart1(Sample1))
-                .Should().Be(7*5);
-            _output.Run("sample2", () => SolvePart1(Sample2))
-                .Should().Be(22*10);
-
-            _output.Run("actual", () => SolvePart1(data));
+            Run("sample1", Sample1, Parse, SolvePart1).Should().Be(7*5);
+            Run("sample2", Sample2, Parse, SolvePart1).Should().Be(22*10);
+            Run("actual", Parse, SolvePart1);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day10");
-
-            _output.Run("sample1", () => CountCombinations(Sample1))
-                .Should().Be(8);
-            _output.Run("sample2", () => CountCombinations(Sample2))
-                .Should().Be(19208);
-
-            _output.Run("actual", () => CountCombinations(data));
+            Run("sample1",Sample1, Parse, CountCombinations).Should().Be(8);
+            Run("sample2", Sample2, Parse, CountCombinations).Should().Be(19208);
+            Run("actual", Parse, CountCombinations);
         }
 
-        private long SolvePart1(IReadOnlyList<long> data)
+        private static long SolvePart1(IEnumerable<long> data)
         {
             var distribution = FindDistribution(data);
 
@@ -62,11 +43,11 @@ namespace AdventOfCode2020
             return n1 * (n3 + 1);
         }
 
-        private ConcurrentDictionary<int, int> FindDistribution(IEnumerable<long> data)
+        private static ConcurrentDictionary<int, int> FindDistribution(IEnumerable<long> data)
         {
             var dist = new ConcurrentDictionary<int, int>();
 
-            var previousValue = 0l;
+            var previousValue = 0L;
             foreach (var value in data.OrderBy(x => x))
             {
                 dist.AddOrUpdate((int) (value - previousValue), _ => 1, (_, c) => c + 1);
@@ -76,7 +57,7 @@ namespace AdventOfCode2020
             return dist;
         }
 
-        private long CountCombinations(IEnumerable<long> data)
+        private static long CountCombinations(IEnumerable<long> data)
         {
             var orderedData = data.OrderBy(x => x).ToImmutableLinkedList();
 
@@ -128,7 +109,6 @@ namespace AdventOfCode2020
             return data;
         }
 
-        private static IReadOnlyList<long> LoadData(string fileName) =>
-            File.ReadAllLines(Path.Combine("Inputs", fileName)).Select(long.Parse).ToList();
+        private static IReadOnlyList<long> Parse(string input) => input.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(long.Parse).ToList();
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
@@ -11,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day11
+    public class Day11 : Test
     {
         private static readonly string Sample = "L.LL.LL.LL\nLLLLLLL.LL\nL.L.L..L..\nLLLL.LL.LL\nL.LL.LL.LL\nL.LLLLL.LL\n..L.L.....\nLLLLLLLLLL\nL.LLLLLL.L\nL.LLLLL.LL\n";
 
@@ -21,38 +20,24 @@ namespace AdventOfCode2020
 
         private static readonly IReadOnlyCollection<(int DeltaRow, int DeltaCol)> AdjacencyVectors = new[] { (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1) };
 
-        private readonly ITestOutputHelper _output;
-
-        public Day11(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day11(ITestOutputHelper output) : base(11, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day11");
-
-            _output.Run("sample", () => SolvePart1(Sample))
-                .Should().Be(37);
-
-            _output.Run("actual", () => SolvePart1(data));
+            Run("sample", Sample, Room, SolvePart1).Should().Be(37);
+            Run("actual", Room, SolvePart1);
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day11");
-
-            _output.Run("sample", () => SolvePart2(Sample))
-                .Should().Be(26);
-
-            _output.Run("actual", () => SolvePart2(data));
+            Run("sample", Sample, Room, SolvePart2).Should().Be(26);
+            Run("actual", Room, SolvePart2);
         }
 
-        private long SolvePart1(string input)
+        private long SolvePart1(State[][] seats)
         {
-            var seats = Room.MustParse(input);
             var room = new RoomState(seats, CalculateAdj(seats, CalculateAdjPart1), 4);
 
             return CountStableOccupiedSeats(room);
@@ -63,9 +48,8 @@ namespace AdventOfCode2020
             return AdjacencyVectors.Select(x => (r + x.DeltaRow, c + x.DeltaCol)).ToArray();
         }
 
-        private long SolvePart2(string input)
+        private long SolvePart2(State[][] seats)
         {
-            var seats = Room.MustParse(input);
             var room = new RoomState(seats, CalculateAdj(seats, CalculateAdjPart2), 5);
 
             return CountStableOccupiedSeats(room);
@@ -190,8 +174,5 @@ namespace AdventOfCode2020
             Empty,
             Occupied
         }
-
-        private static string LoadData(string fileName) =>
-            File.ReadAllText(Path.Combine("Inputs", fileName));
     }
 }

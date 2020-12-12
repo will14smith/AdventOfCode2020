@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+using System.Linq;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
 using Xunit;
@@ -7,42 +7,27 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public partial class Day12
+    public partial class Day12 : Test
     {
-        private static readonly string Sample = "F10\nN3\nF7\nR90\nF11\n";
+        private const string Sample = "F10\nN3\nF7\nR90\nF11\n";
 
-        private readonly ITestOutputHelper _output;
-
-        public Day12(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day12(ITestOutputHelper output) : base(12, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day12");
-
-            _output.Run("sample", () => SolvePart1(Sample))
-                .Should().Be(25);
-
-            _output.Run("actual", () => SolvePart1(data));
+            Run("sample", Sample, Tokenizer, Instructions, SolvePart1).Should().Be(25);
+            Run("actual", Tokenizer, Instructions, SolvePart1);
         }
 
-        private int SolvePart1(string input)
+        private static int SolvePart1(Op[] instructions)
         {
-            var instructions = Instructions.MustParse(Tokenizer, input);
-
-            var state = StatePart1.Initial;
-            foreach (var instruction in instructions)
-            {
-                state = Apply(state, instruction);
-            }
+            var state = instructions.Aggregate(StatePart1.Initial, Apply);
 
             return Math.Abs(state.X) + Math.Abs(state.Y);
         }
 
-        private StatePart1 Apply(StatePart1 state, Op instruction)
+        private static StatePart1 Apply(StatePart1 state, Op instruction)
         {
             return instruction.Type switch
             {
@@ -89,9 +74,5 @@ namespace AdventOfCode2020
 
             internal static int NormaliseHeading(int heading) => heading < 0 ? heading % 360 + 360 : heading % 360;
         }
-
-
-        private static string LoadData(string fileName) =>
-            File.ReadAllText(Path.Combine("Inputs", fileName));
     }
 }

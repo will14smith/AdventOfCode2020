@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day3
+    public class Day03 : Test
     {
         private static readonly IEnumerable<string> Sample = new[]
         {
@@ -27,37 +27,25 @@ namespace AdventOfCode2020
             ".#..#...#.#",
         };
 
+        private static readonly IReadOnlyCollection<(int X, int Y)> Slopes = new[] {(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)};
+
         private static readonly TextParser<bool> TreeParser = Character.In('.', '#').Select(c => c == '#');
         private static readonly TextParser<Line> LineParser = TreeParser.Many().Select(x => new Line(x));
 
-        private readonly ITestOutputHelper _output;
-
-        public Day3(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public Day03(ITestOutputHelper output) : base(3, output) { }
 
         [Fact]
         public void Part1()
         {
-            var data = LoadData("day3");
-
-            _output.Run("sample", () => CountTreesHit(Sample))
-                .Should().Be(7);
-
-            _output.Run("actual", () => CountTreesHit(data));
+            Run("sample", Sample, data => CountTreesHit(data)).Should().Be(7);
+            Run("actual", LoadInputLines(), data => CountTreesHit(data));
         }
 
         [Fact]
         public void Part2()
         {
-            var data = LoadData("day3");
-            var slopes = new[] {(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)};
-
-            _output.Run("sample", () => CountTreesHitAllSlopes(Sample, slopes))
-                .Should().Be(336);
-
-            _output.Run("actual", () => CountTreesHitAllSlopes(data, slopes));
+            Run("sample", Sample, data => CountTreesHitAllSlopes(data, Slopes)).Should().Be(336);
+            Run("actual", Sample, data => CountTreesHitAllSlopes(data, Slopes));
         }
 
         private static int CountTreesHitAllSlopes(IEnumerable<string> lineStrings, IEnumerable<(int X, int Y)> slopes)
@@ -104,8 +92,5 @@ namespace AdventOfCode2020
 
             public bool HasTreeAtX(int x) => _trees[x % _trees.Count];
         }
-
-        private static IReadOnlyCollection<string> LoadData(string fileName) =>
-            File.ReadAllLines(Path.Combine("Inputs", fileName));
     }
 }
