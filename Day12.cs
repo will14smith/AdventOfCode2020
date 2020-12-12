@@ -33,7 +33,7 @@ namespace AdventOfCode2020
         {
             var instructions = Instructions.MustParse(Tokenizer, input);
 
-            var state = State.Initial;
+            var state = StatePart1.Initial;
             foreach (var instruction in instructions)
             {
                 state = Apply(state, instruction);
@@ -42,7 +42,7 @@ namespace AdventOfCode2020
             return Math.Abs(state.X) + Math.Abs(state.Y);
         }
 
-        private State Apply(State state, Op instruction)
+        private StatePart1 Apply(StatePart1 state, Op instruction)
         {
             return instruction.Type switch
             {
@@ -68,11 +68,11 @@ namespace AdventOfCode2020
             };
         }
 
-        private class State
+        private class StatePart1
         {
-            public static readonly State Initial = new State(0, 0, 90);
+            public static readonly StatePart1 Initial = new StatePart1(0, 0, 90);
 
-            private State(int x, int y, int heading)
+            private StatePart1(int x, int y, int heading)
             {
                 X = x;
                 Y = y;
@@ -83,11 +83,11 @@ namespace AdventOfCode2020
             public int Y { get; }
             public int Heading { get; }
 
-            public State IncX(in int delta) => new State(X + delta, Y, Heading);
-            public State IncY(in int delta) => new State(X, Y + delta, Heading);
-            public State Rotate(int delta) => new State(X, Y, NormaliseHeading(Heading + delta));
+            public StatePart1 IncX(in int delta) => new StatePart1(X + delta, Y, Heading);
+            public StatePart1 IncY(in int delta) => new StatePart1(X, Y + delta, Heading);
+            public StatePart1 Rotate(int delta) => new StatePart1(X, Y, NormaliseHeading(Heading + delta));
 
-            private static int NormaliseHeading(int heading) => heading < 0 ? (heading % 360) + 360 : heading % 360;
+            internal static int NormaliseHeading(int heading) => heading < 0 ? heading % 360 + 360 : heading % 360;
         }
 
 
