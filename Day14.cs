@@ -92,7 +92,7 @@ namespace AdventOfCode2020
             {
                 return sub;
             }
-            
+
             return sub.Concat(sub.Select(x => x | iMask));
         }
     }
