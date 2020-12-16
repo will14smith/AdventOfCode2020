@@ -41,6 +41,14 @@ namespace AdventOfCode2020.Utilities
                 from result in parser
                 from _ in ignoreParser
                 select result;
+        }     
+        
+        public static TokenListParser<TToken, T> ThenIgnore<TToken, T, T2>(this TokenListParser<TToken, T> parser, TokenListParser<TToken, T2> ignoreParser)
+        {
+            return
+                from result in parser
+                from _ in ignoreParser
+                select result;
         }
 
         public static TextParser<T> ThenIgnoreOptional<T, T2>(this TextParser<T> parser, TextParser<T2> ignoreParser)
