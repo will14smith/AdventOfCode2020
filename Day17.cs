@@ -17,7 +17,6 @@ namespace AdventOfCode2020
         private static readonly TextParser<bool[]> Row = Cell.AtLeastOnce().ThenIgnore(SuperpowerExtensions.NewLine);
         private static readonly TextParser<bool[][]> Slice = Row.AtLeastOnce();
 
-
         public Day17(ITestOutputHelper output) : base(17, output) { }
         
         [Fact]
