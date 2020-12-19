@@ -35,6 +35,30 @@ namespace AdventOfCode2020.Utilities
                 select result;
         }
 
+        public static TextParser<TResult> Then<T, T2, TResult>(this TextParser<T> parser1, TextParser<T2> parser2, Func<T, T2, TResult> combine)
+        {
+            return
+                from result1 in parser1
+                from result2 in parser2
+                select combine(result1, result2);
+        }  
+        public static TextParser<(T1, T2)> Then<T1, T2>(this TextParser<T1> parser1, TextParser<T2> parser2)
+        {
+            return parser1.Then(parser2, (a, b) => (a, b));
+        }     
+        
+        public static TokenListParser<TToken, TResult> Then<TToken, T, T2, TResult>(this TokenListParser<TToken, T> parser1, TokenListParser<TToken, T2> parser2, Func<T, T2, TResult> combine)
+        {
+            return
+                from result1 in parser1
+                from result2 in parser2
+                select combine(result1, result2);
+        }  
+        public static TokenListParser<TToken, (T1, T2)> Then<TToken, T1, T2>(this TokenListParser<TToken, T1> parser1, TokenListParser<TToken, T2> parser2)
+        {
+            return parser1.Then(parser2, (a, b) => (a, b));
+        }     
+        
         public static TextParser<T> ThenIgnore<T, T2>(this TextParser<T> parser, TextParser<T2> ignoreParser)
         {
             return
