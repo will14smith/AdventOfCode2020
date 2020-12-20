@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using AdventOfCode2020.Utilities;
@@ -13,6 +12,9 @@ namespace AdventOfCode2020
     {
         private const string Sample = "Tile 2311:\n..##.#..#.\n##..#.....\n#...##..#.\n####.#...#\n##.##.###.\n##...#.###\n.#.#.#..##\n..#....#..\n###...#.#.\n..###..###\n\nTile 1951:\n#.##...##.\n#.####...#\n.....#..##\n#...######\n.##.#....#\n.###.#####\n###.##.##.\n.###....#.\n..#.#..#.#\n#...##.#..\n\nTile 1171:\n####...##.\n#..##.#..#\n##.#..#.#.\n.###.####.\n..###.####\n.##....##.\n.#...####.\n#.##.####.\n####..#...\n.....##...\n\nTile 1427:\n###.##.#..\n.#..#.##..\n.#.##.#..#\n#.#.#.##.#\n....#...##\n...##..##.\n...#.#####\n.#.####.#.\n..#..###.#\n..##.#..#.\n\nTile 1489:\n##.#.#....\n..##...#..\n.##..##...\n..#...#...\n#####...#.\n#..#.#.#.#\n...#.#.#..\n##.#...##.\n..##.##.##\n###.##.#..\n\nTile 2473:\n#....####.\n#..#.##...\n#.##..#...\n######.#.#\n.#...#.#.#\n.#########\n.###.#..#.\n########.#\n##...##.#.\n..###.#.#.\n\nTile 2971:\n..#.#....#\n#...###...\n#.#.###...\n##.##..#..\n.#####..##\n.#..####.#\n#..#.#..#.\n..####.###\n..#.#.###.\n...#.#.#.#\n\nTile 2729:\n...#.#.#.#\n####.#....\n..#.#.....\n....#..#.#\n.##..##.#.\n.#.####...\n####.#.#..\n##.####...\n##..#.##..\n#.##...##.\n\nTile 3079:\n#.#.#####.\n.#..######\n..#.......\n######....\n####.#..#.\n.#...#.##.\n#.#####.##\n..#.###...\n..#.......\n..#.###...\n\n";
 
+        private readonly Tile _monster = new (0, ImageLines.MustParse(Tokenizer, "..................#.\n#....##....##....###\n.#..#..#..#..#..#...\n"));
+        private readonly IReadOnlyCollection<TransformedTile> _transformedMonsters;
+
         /*
          * ---0---
          * |      |
@@ -20,9 +22,11 @@ namespace AdventOfCode2020
          * |      |
          * ---2---|
          */
-        
 
-        public Day20(ITestOutputHelper output) : base(20, output) { }
+        public Day20(ITestOutputHelper output) : base(20, output)
+        {
+            _transformedMonsters = EnumerateTransformations(_monster).ToList();
+        }
 
         [Fact]
         public void Part1()
@@ -31,6 +35,13 @@ namespace AdventOfCode2020
             Run("actual", Tokenizer, Parser, SolvePart1);
         }
         
+        [Fact]
+        public void Part2()
+        {
+            Run("sample", Sample, Tokenizer, Parser, SolvePart2).Should().Be(273);
+            Run("actual", Tokenizer, Parser, SolvePart2);
+        }
+
         private static long SolvePart1(Model input)
         {
             var image = new Aligner(input.Tiles).Align();
@@ -48,6 +59,16 @@ namespace AdventOfCode2020
             return corners.Select(x => x.Tile.Id).Aggregate((a, x) => a * x);
         }
         
+        private long SolvePart2(Model input)
+        {
+            var tiles = new Aligner(input.Tiles).Align();
+            var image = BuildImage(tiles);
+            
+            MatchMonsters(image);
+
+            return CountSea(image);
+        }
+
         private static IEnumerable<TransformedTile> EnumerateTransformations(Tile tile) => 
             Enum.GetValues<Flip>().SelectMany(_ => Enum.GetValues<Rotate>(), (flip, rotate) => new TransformedTile(tile, flip, rotate));
 
