@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Schema;
 using AdventOfCode2020.Utilities;
 using FluentAssertions;
 using Xunit;
@@ -31,112 +30,121 @@ namespace AdventOfCode2020
             Run("sample", Sample, Tokenizer, Parser, SolvePart1).Should().Be(20899048083289);
             Run("actual", Tokenizer, Parser, SolvePart1);
         }
-
+        
         private static long SolvePart1(Model input)
         {
-            var potentialMatches = new ConcurrentDictionary<ushort, List<long>>();
-
-            foreach (var (_, tile) in input.Tiles)
-            {
-                foreach (var edge in GetEdges(new TransformedTile(tile, Flip.None, Rotate.CW0)))
-                {
-                    potentialMatches.GetOrAdd(EdgeToNum(edge), _ => new List<long>()).Add(tile.Id);
-                    potentialMatches.GetOrAdd(EdgeToNum(edge.Reverse().ToList()), _ => new List<long>()).Add(tile.Id);
-                }
-            }
-
-            var pairs = potentialMatches.Where(x => x.Value.Count > 1).Select(x => x.Value).Select(x =>
-            {
-                if (x.Count != 2) throw new InvalidOperationException();
-
-                return (x[0], x[1]);
-            }).ToList();
-
-            var neighbours = input.Tiles.ToDictionary(x => x.Key, x => pairs.Count(p => p.Item1 == x.Key || p.Item2 == x.Key));
-
-            var corners = neighbours.Where(x => x.Value == 4).Select(x => x.Key).ToList();
-            if (corners.Count != 4) throw new InvalidOperationException();
-
-            return corners.Aggregate((a, x) => a * x);
-        }
-
-        private static IEnumerable<TransformedTile> TransformTile(Tile tile) => Enum.GetValues<Flip>().SelectMany(_ => Enum.GetValues<Rotate>(), (flip, rotate) => new TransformedTile(tile, flip, rotate));
-        private static ushort EdgeToNum(IReadOnlyList<bool> edge)
-        {
-            if (edge.Count > 16) throw new ArgumentOutOfRangeException(nameof(edge));
-
-            ushort num = 0;
-
-            for (var i = 0; i < edge.Count; i++)
-            {
-                num = (ushort) (num | (edge[i] ? 1 << i : 0));
-            }
+            var image = new Aligner(input.Tiles).Align();
+            var width = image.GetLength(0);
+            var height = image.GetLength(1);
             
-            return num;
+            var corners = new[]
+            {
+                image[0, 0],
+                image[0, height - 1],
+                image[width - 1, 0],
+                image[width - 1, height - 1],
+            };
+            
+            return corners.Select(x => x.Tile.Id).Aggregate((a, x) => a * x);
         }
         
-        private static IEnumerable<IReadOnlyList<bool>> GetEdges(TransformedTile tile)
-        {
-            var edges = new IReadOnlyList<bool>[4];
+        private static IEnumerable<TransformedTile> EnumerateTransformations(Tile tile) => 
+            Enum.GetValues<Flip>().SelectMany(_ => Enum.GetValues<Rotate>(), (flip, rotate) => new TransformedTile(tile, flip, rotate));
 
-            for (var i = 0; i < edges.Length; i++)
+        private class TransformedTile
+        {
+            private readonly bool[,] _transformed;
+
+            public int YSize => _transformed.GetLength(0);
+            public int XSize => _transformed.GetLength(1);
+            
+            public Tile Tile { get; }
+            public Flip Flip { get; }
+            public Rotate Rotate { get; }
+
+            public TransformedTile(Tile tile, Flip flip, Rotate rotate)
             {
-                edges[i] = tile.GetEdge(i);
+                Tile = tile;
+                Flip = flip;
+                Rotate = rotate;
+
+                _transformed = BuildTransform(tile.Image, flip, rotate);
             }
             
-            return edges;
-        }
-
-        private record TransformedTile(Tile Tile, Flip Flip, Rotate Rotate)
-        {
-            public IReadOnlyList<bool> GetEdge(int edgeId)
+            private static bool[,] BuildTransform(bool[,] image, Flip flip, Rotate rotate)
             {
-                bool shouldReverse;
-                (edgeId, shouldReverse) = GetTransformedEdge(edgeId);
-                
-                var (_, image) = Tile;
-                var isH = edgeId is 0 or 2;
-                var isM = edgeId is 0 or 3;
-                var edge = new bool[isH ? image.GetLength(0) : image.GetLength(1)];
+                var (oySize, oxSize) = (image.GetLength(0), image.GetLength(1));
+                var (ySize, xSize) = rotate is Rotate.CW90 or Rotate.CW270 ? (oxSize, oySize) : (oySize, oxSize);
+                var transformed = new bool[ySize, xSize];
 
+                for (var y = 0; y < ySize; y++)
+                {
+                    for (var x = 0; x < xSize; x++)
+                    {
+                        var (ry, rx) = rotate switch
+                        {
+                            Rotate.CW0 => (y, x),
+                            Rotate.CW90 => (oySize-x-1, y),
+                            Rotate.CW180 => (oySize-y-1, oxSize-x-1),
+                            Rotate.CW270 => (x, oxSize-y-1),
+
+                            _ => throw new ArgumentOutOfRangeException(nameof(rotate), rotate, null)
+                        };
+                        
+                        var (fy, fx) = flip switch
+                        {
+                            Flip.None => (ry, rx),
+                            Flip.FlipX => (oySize-ry-1, rx),
+                            Flip.FlipY => (ry, oxSize-rx-1),
+                            Flip.FlipXY => (oySize-ry-1, oxSize-rx-1),
+                            
+                            _ => throw new ArgumentOutOfRangeException(nameof(flip), flip, null)
+                        };
+                        
+                        transformed[y, x] = image[fy, fx];
+                    }
+                }
+
+                return transformed;
+            }
+
+            public bool Get(in int y, in int x) => _transformed[y, x];
+
+            public IReadOnlyList<bool> GetEdge(int index)
+            {
+                var isH = index is 0 or 2;
+                var isM = index is 0 or 3;
+                
+                var edge = new bool[isH ? XSize : YSize];
+                
                 for (var i = 0; i < edge.Length; i++)
                 {
-                    var (x, y) = isH ? (i, isM ? 0 : edge.Length - 1) : (isM ? 0 : edge.Length - 1, i);
-                    edge[shouldReverse ? edge.Length - i - 1 : i] = image[y, x];
+                    var (x, y) = isH ? (i, isM ? 0 : YSize - 1) : (isM ? 0 : XSize - 1, i);
+                    edge[i] = _transformed[y, x];
                 }
-            
+
                 return edge;
             }
+            
+            public IEnumerable<IReadOnlyList<bool>> GetEdges()
+            {
+                var edges = new IReadOnlyList<bool>[4];
 
-            private static readonly IReadOnlyDictionary<Flip, int[]> EdgeOrder = new Dictionary<Flip, int[]>
-            {
-                { Flip.None, new []{ 0, 1, 2, 3 } },
-                { Flip.FlipX, new []{ 2, 1, 0, 3 } },
-                { Flip.FlipY, new []{ 0, 3, 2, 1 } },
-            };
-            private static readonly IReadOnlyDictionary<Rotate, int> RotateOffset = new Dictionary<Rotate, int>
-            {
-                { Rotate.CW0, 0 },
-                { Rotate.CW90, 1 },
-                { Rotate.CW180, 2 },
-                { Rotate.CW270, 3 },
-            };
-            private (int TransformedEdgeId, bool NeedsReversed) GetTransformedEdge(int edgeId)
-            {
-                var transformedEdgeId = EdgeOrder[Flip][(edgeId + RotateOffset[Rotate]) % 4];
-
-                var isH = edgeId is 0 or 2;
-                var reverse = isH ? Rotate is Rotate.CW90 or Rotate.CW180 : Rotate is Rotate.CW180 or Rotate.CW270;
-                reverse = isH && Flip == Flip.FlipY || !isH && Flip == Flip.FlipX ? !reverse : reverse;
-                
-                return (transformedEdgeId, reverse);
+                for (var i = 0; i < edges.Length; i++)
+                {
+                    edges[i] = GetEdge(i);
+                }
+            
+                return edges;
             }
         }
+
         private enum Flip
         {
             None,
             FlipX,
             FlipY,
+            FlipXY,
         }  
         private enum Rotate
         {
