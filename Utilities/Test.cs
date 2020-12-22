@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using Superpower;
 using Xunit.Abstractions;
@@ -16,15 +17,18 @@ namespace AdventOfCode2020.Utilities
             Output = output;
         }
 
-        protected T Run<T>(string name, Func<T> fn)
+        protected TResult Run<TModel, TResult>(string name, TModel model, Func<TModel, TResult> fn)
         {
             Output.WriteLine($"[*] Calculating for {name} data");
-            var result = fn();
-            Output.WriteLine($"[*] Result = {result}");
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var result = fn(model);
+            stopwatch.Stop();
+            var time = stopwatch.Elapsed;
+            Output.WriteLine($"[*] Result = {result}, in {Math.Round(time.TotalMilliseconds, 2)}ms");
             return result;
         }
 
-        protected TResult Run<TModel, TResult>(string name, TModel model, Func<TModel, TResult> fn) => Run(name, () => fn(model));
         protected TResult Run<TModel, TResult>(string name, string input, Func<string, TModel> parseFn, Func<TModel, TResult> fn) => Run(name, parseFn(input), fn);
         protected TResult Run<TModel, TResult>(string name, string input, TextParser<TModel> parser, Func<TModel, TResult> fn) => Run(name, parser.MustParse(input), fn);
         protected TResult Run<TModel, TToken, TResult>(string name, string input, Tokenizer<TToken> tokenizer, TokenListParser<TToken, TModel> parser, Func<TModel, TResult> fn) => Run(name, parser.MustParse(tokenizer, input), fn);

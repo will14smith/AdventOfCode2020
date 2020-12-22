@@ -31,8 +31,8 @@ namespace AdventOfCode2020
 
         private static long SolvePart1(Input input)
         {
-            var player1 = new Queue<int>(input.Player1);
-            var player2 = new Queue<int>(input.Player2);
+            var player1 = new Queue<byte>(input.Player1);
+            var player2 = new Queue<byte>(input.Player2);
 
             while (player1.Count > 0 && player2.Count > 0)
             {
@@ -59,12 +59,12 @@ namespace AdventOfCode2020
             return PlayPart2(input.Player1, input.Player2).Score;
         }
 
-        private static (int Score, bool Player1Won) PlayPart2(IEnumerable<int> player1Input, IEnumerable<int> player2Input)
+        private static (int Score, bool Player1Won) PlayPart2(IEnumerable<byte> player1Input, IEnumerable<byte> player2Input)
         {
             var seen = new HashSet<string>();
             
-            var player1 = new Queue<int>(player1Input);
-            var player2 = new Queue<int>(player2Input);
+            var player1 = new Queue<byte>(player1Input);
+            var player2 = new Queue<byte>(player2Input);
             
             while (player1.Count > 0 && player2.Count > 0)
             {
@@ -102,9 +102,9 @@ namespace AdventOfCode2020
             return (SumDeck(player1.Count > 0 ? player1 : player2), player1.Count > 0);
         }
 
-        private static string HashDecks(IEnumerable<int> player1, IEnumerable<int> player2) => $"{HashDeck(player1)};{HashDeck(player2)}";
-        private static string HashDeck(IEnumerable<int> deck) => string.Join(",", deck);
+        private static string HashDecks(IEnumerable<byte> player1, IEnumerable<byte> player2) => $"{HashDeck(player1)};{HashDeck(player2)}";
+        private static string HashDeck(IEnumerable<byte> deck) => string.Join(",", deck);
 
-        private static int SumDeck(IReadOnlyCollection<int> deck) => deck.Select((x, i) => x * (deck.Count - i)).Sum();
+        private static int SumDeck(IReadOnlyCollection<byte> deck) => deck.Select((x, i) => x * (deck.Count - i)).Sum();
     }
 }
