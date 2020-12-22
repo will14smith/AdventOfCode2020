@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AdventOfCode2020.Utilities;
 using Superpower;
+using Superpower.Model;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
 
@@ -23,8 +24,8 @@ namespace AdventOfCode2020
         private static readonly TokenListParser<TokenType, int> Number = Token.EqualTo(TokenType.Number).Apply(Numerics.IntegerInt32); 
         private static readonly TokenListParser<TokenType, Rule> Reference = Number.Select(x => (Rule)new Rule.Reference(x)); 
         private static readonly TokenListParser<TokenType, Rule> Match = Token.Sequence(TokenType.Quote, TokenType.Message, TokenType.Quote).Select(xs => (Rule)new Rule.Match(xs[1].ToStringValue())); 
-        private static readonly TokenListParser<TokenType, Rule> Sequence = Reference.AtLeastOnce().Select(xs => (Rule) new Rule.Sequence(xs)); 
-        private static readonly TokenListParser<TokenType, Rule> Alternative = Sequence.AtLeastOnceDelimitedBy(Token.EqualTo(TokenType.Pipe)).Select(xs => (Rule) new Rule.Alternative(xs)); 
+        private static readonly TokenListParser<TokenType, Rule> Sequence = Reference.AtLeastOnce().Select(Rule.CreateSequence); 
+        private static readonly TokenListParser<TokenType, Rule> Alternative = Sequence.AtLeastOnceDelimitedBy(Token.EqualTo(TokenType.Pipe)).Select(Rule.CreateAlternative); 
         private static readonly TokenListParser<TokenType, Rule> RuleParser = Alternative.Or(Match); 
         private static readonly TokenListParser<TokenType, (int Tag, Rule Rule)> TaggedRule = Number.ThenIgnore(Token.EqualTo(TokenType.Colon)).Then(i => RuleParser.Select(rule => (i, rule))).ThenIgnore(Token.EqualTo(TokenType.NewLine));
         private static readonly TokenListParser<TokenType, Dictionary<int, Rule>> Rules = TaggedRule.AtLeastOnce().Select(rules => rules.ToDictionary(x => x.Tag, x => x.Rule));
@@ -37,6 +38,9 @@ namespace AdventOfCode2020
             public record Alternative(IReadOnlyList<Rule> Rules) : Rule;
             public record Reference(int Rule) : Rule;
             public record Match(string Value) : Rule;
+
+            public static Rule CreateSequence(IReadOnlyList<Rule> rules) => rules.Count == 1 ? rules[0] : new Sequence(rules);
+            public static Rule CreateAlternative(IReadOnlyList<Rule> rules) => rules.Count == 1 ? rules[0] : new Alternative(rules);
         }
         
         private record Spec(IReadOnlyDictionary<int, Rule> Rules, IReadOnlyList<string> Messages);
