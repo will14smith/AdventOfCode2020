@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using AdventOfCode2020.Utilities;
@@ -21,11 +20,44 @@ namespace AdventOfCode2020
         {
             Run("sample", Sample, Parse, SolvePart1).Should().Be("67384529");
             Run("actual", Actual, Parse, SolvePart1);
+        } 
+        
+        [Fact]
+        public void Part2()
+        {
+            Run("sample", Sample, Parse, SolvePart2).Should().Be("149245887792");
+            Run("actual", Actual, Parse, SolvePart2);
         }
 
-        private string SolvePart1(IReadOnlyList<byte> input)
+        private string SolvePart1(IReadOnlyList<int> input)
         {
             var nodes = input.Select(x => new L(x)).ToList();
+            var finalNode = FindNode1AfterNIterations(nodes, 100);
+
+            var output = new StringBuilder();
+
+            var node = finalNode.Next;
+            while (node != finalNode)
+            {
+                output.Append(node.Value);
+                node = node.Next;
+            }
+            
+            return output.ToString();
+        }
+        
+        private static string SolvePart2(IReadOnlyList<int> input)
+        {
+            var nodes = input.Concat(Enumerable.Range(10, 1_000_000-10+1)).Select(x => new L(x)).ToList();
+            var finalNode = FindNode1AfterNIterations(nodes, 10_000_000);
+
+            return $"{(long) finalNode.Next.Value * finalNode.Next.Next.Value}";
+        }
+
+        private static L FindNode1AfterNIterations(IReadOnlyList<L> nodes, int iterations)
+        {
+            var max = nodes.Max(x => x.Value);
+            var indexedNodes = nodes.ToDictionary(x => x.Value);
             for (var i = 0; i < nodes.Count; i++)
             {
                 if (i == 0) nodes[^1].Next = nodes[i];
@@ -33,25 +65,20 @@ namespace AdventOfCode2020
             }
 
             var current = nodes[0];
-
-            for (var t = 0; t < 100; t++)
+            for (var t = 0; t < iterations; t++)
             {
                 var pickup = current.Next;
-                var pickupValues = new [] { pickup.Value, pickup.Next.Value, pickup.Next.Next.Value };
+                var pickupValues = new[] {pickup.Value, pickup.Next.Value, pickup.Next.Next.Value};
 
                 current.Next = pickup.Next.Next.Next;
 
                 var dst = current.Value;
                 do
                 {
-                    dst = dst == 1 ? 9 : (byte) (dst - 1);
+                    dst = dst == 1 ? max : dst - 1;
                 } while (pickupValues.Contains(dst));
-                
-                var target = current;
-                while (target.Value != dst)
-                {
-                    target = target.Next;
-                }
+
+                var target = indexedNodes[dst];
 
                 pickup.Next.Next.Next = target.Next;
                 target.Next = pickup;
@@ -64,35 +91,20 @@ namespace AdventOfCode2020
                 current = current.Next;
             }
 
-            return current.Print()[2..].Replace(" ", "");
+            return current;
         }
 
         private class L
         {
-            public L(byte value)
+            public L(int value)
             {
                 Value = value;
             }
 
-            public byte Value { get; }
+            public int Value { get; }
             public L Next { get; set; }
-
-            public string Print()
-            {
-                var output = new StringBuilder();
-                output.Append($"{Value}");
-
-                var node = Next;
-                while (node != this)
-                {
-                    output.Append($" {node.Value}");
-                    node = node.Next;
-                }
-
-                return output.ToString();
-            }
         }
         
-        private static IReadOnlyList<byte> Parse(string input) => input.Select(x => (byte) (x - (byte) '0')).ToList();
+        private static IReadOnlyList<int> Parse(string input) => input.Select(x => x - (byte) '0').ToList();
     }
 }
