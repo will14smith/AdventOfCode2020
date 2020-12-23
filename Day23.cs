@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2020
 {
-    public class Day23 : Test
+    public partial class Day23 : Test
     {
         private const string Sample = "389125467";
         private const string Actual = "219748365";
