@@ -26,7 +26,7 @@ namespace AdventOfCode2020
             Run("actual", Parse, SolvePart2);
         }
 
-        private long SolvePart1((long, long) input)
+        private static long SolvePart1((long, long) input)
         {
             var (cardPublicKey, doorPublicKey) = input;
 
@@ -59,7 +59,7 @@ namespace AdventOfCode2020
             return key1;
         }
 
-        private long Transform(long loopSize, long subjectNumber)
+        private static long Transform(long loopSize, long subjectNumber)
         {
             var value = 1L;
 
@@ -71,9 +71,9 @@ namespace AdventOfCode2020
             return value;
         }
         
-        private long SolvePart2((long, long) input)
+        private static long SolvePart2((long, long) input)
         {
-            throw new System.NotImplementedException();
+            return 0;
         }
 
         private static (long, long) Parse(string input)
